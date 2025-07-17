@@ -25,9 +25,9 @@ def load_bot_configs():
     except Exception as e:
         sys.exit(f"❌ Error loading bot configuration: {e}")
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-def call_ollama(prompt: str, model: str, system_prompt: str) -> str:
+
+def call_ollama(prompt: str, model: str, system_prompt: str, logger) -> str:
     payload = {
         "model": model,
         "prompt": prompt,
@@ -40,10 +40,10 @@ def call_ollama(prompt: str, model: str, system_prompt: str) -> str:
         data = response.json()
         return data.get("response", "No response received from Ollama.")
     except Exception as e:
-        logging.error(f"Error calling Ollama: {e}")
+        logger.error(f"Error calling Ollama: {e}")
         return f"Error calling Ollama: {e}"
 
-def create_message_handler(bot_config):
+def create_message_handler(bot_config, logger):
     async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.message
         if message is None or message.text is None:
@@ -52,7 +52,7 @@ def create_message_handler(bot_config):
         message_text = message.text.strip()
         bot_info = await context.bot.get_me()
         if not bot_info.username:
-            logging.error("Bot username is empty or None")
+            logger.error("Bot username is empty or None")
             return
         bot_username = bot_info.username.lower()
 
@@ -75,7 +75,8 @@ def create_message_handler(bot_config):
         reply = call_ollama(
             prompt,
             bot_config.get('model', 'llama3'),
-            bot_config.get('system_prompt', 'You are a helpful assistant.')
+            bot_config.get('system_prompt', 'You are a helpful assistant.'),
+            logger
         )
         await message.reply_text(reply)
 
@@ -85,29 +86,39 @@ def run_bot(bot_config):
     token = bot_config.get('token', '')
     bot_name = bot_config.get('name', 'unnamed')
 
+    # Set up bot-specific logging
+    logging.basicConfig(
+        format=f'%(asctime)s - {bot_name} - %(levelname)s - %(message)s',
+        level=logging.INFO,
+        force=True  # This forces reconfiguration in each process
+    )
+    logger = logging.getLogger(bot_name)
+
     if not token:
-        logging.error(f"No token provided for bot: {bot_name}")
+        logger.error(f"No token provided for bot: {bot_name}")
         return
 
     try:
-        logging.basicConfig(
-            format=f'%(asctime)s - {bot_name} - %(levelname)s - %(message)s',
-            level=logging.INFO
-        )
-
         app = ApplicationBuilder().token(token).build()
-        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), create_message_handler(bot_config)))
+        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), create_message_handler(bot_config, logger)))
 
-        print(f"✅ {bot_name} is running...")
+        logger.info(f"✅ {bot_name} is running...")
         app.run_polling()
 
     except Exception as e:
-        logging.error(f"Error running bot {bot_name}: {e}")
+        logger.error(f"Error running bot {bot_name}: {e}")
 
 def main():
+    # Set up main process logging
+    logging.basicConfig(
+        format='%(asctime)s - MAIN - %(levelname)s - %(message)s',
+        level=logging.INFO
+    )
+    main_logger = logging.getLogger('MAIN')
+
     bot_configs = load_bot_configs()
 
-    print(f"✅ Starting {len(bot_configs)} bot(s) in separate processes...")
+    main_logger.info(f"Starting {len(bot_configs)} bot(s) in separate processes...")
 
     processes = []
     for config in bot_configs:
@@ -119,7 +130,7 @@ def main():
         for process in processes:
             process.join()
     except KeyboardInterrupt:
-        print("\n🛑 Shutting down all bots...")
+        main_logger.info("\n🛑 Shutting down all bots...")
         for process in processes:
             process.terminate()
             process.join()
