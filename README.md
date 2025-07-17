@@ -39,7 +39,7 @@ A Python-based system for running multiple Telegram bots simultaneously, each wi
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd shp-bots
+   cd multi-bot-telegram-system
    ```
 
 2. **Create virtual environment**
@@ -210,7 +210,7 @@ The bots now support rich formatting including:
 ## Project Structure
 
 ```
-shp-bots/
+multi-bot-telegram-system/
 ├── bot.py              # Main bot application and Telegram handling
 ├── api_clients.py      # AI provider API clients
 ├── config.py          # Configuration loading and validation
