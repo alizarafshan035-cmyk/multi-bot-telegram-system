@@ -1,2 +1,5 @@
-nbrusco-bot-env
+.venv/
 .idea
+.env
+.vscode/*
+!.vscode/launch.json
