@@ -27,7 +27,7 @@ def call_ollama(prompt: str) -> str:
         "stream": False
     }
     try:
-        response = requests.post(OLLAMA_API_URL, json=payload)
+        response = requests.post(OLLAMA_API_URL + "/api/generate", json=payload)
         response.raise_for_status()
         data = response.json()
         return data.get("response", "No response received from Ollama.")
@@ -36,24 +36,39 @@ def call_ollama(prompt: str) -> str:
         return f"Error calling Ollama: {e}"
 
 # === TELEGRAM HANDLER ===
-async def mention_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message
+    if message is None or message.text is None:
+        return
+
+    message_text = message.text.strip()
     bot_username = (await context.bot.get_me()).username.lower()
-    message_text = update.message.text
 
-    if f"@{bot_username}" in message_text.lower():
-        prompt = message_text.replace(f"@{bot_username}", "").strip()
-        if not prompt:
-            await update.message.reply_text("Please include a prompt after mentioning me.")
+    # Group chat: only respond if mentioned
+    if message.chat.type in ("group", "supergroup"):
+        if f"@{bot_username}" not in message_text.lower():
             return
+        prompt = message_text.replace(f"@{bot_username}", "").strip()
 
-        await update.message.chat.send_action(action="typing")
-        reply = call_ollama(prompt)
-        await update.message.reply_text(reply)
+    # Private chat: respond to all messages
+    elif message.chat.type == "private":
+        prompt = message_text
+
+    else:
+        return  # Skip other chat types like channels
+
+    if not prompt:
+        await message.reply_text("Please include a prompt.")
+        return
+
+    await message.chat.send_action(action="typing")
+    reply = call_ollama(prompt)
+    await message.reply_text(reply)
 
 # === MAIN FUNCTION ===
 def main():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), mention_handler))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), message_handler))
 
     print("✅ Bot is running...")
     app.run_polling()
