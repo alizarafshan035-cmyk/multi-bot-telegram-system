@@ -1,49 +1,13 @@
 import os
-import sys
-import json
 import logging
-import requests
 import multiprocessing
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
-
-CONFIG_JSON = os.getenv('CONFIG_JSON', 'config.json')
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
-
-def load_bot_configs():
-    try:
-        with open(CONFIG_JSON, 'r') as f:
-            config = json.load(f)
-        bot_configs = config.get('bots', [])
-        if not bot_configs:
-            sys.exit("❌ No 'bots' configuration found in JSON file.")
-        return bot_configs
-    except FileNotFoundError:
-        sys.exit(f"❌ Bot configuration file not found: {CONFIG_JSON}")
-    except json.JSONDecodeError as e:
-        sys.exit(f"❌ Invalid JSON in bot configuration file: {e}")
-    except Exception as e:
-        sys.exit(f"❌ Error loading bot configuration: {e}")
+from api_clients import call_ai_model
+from config import load_bot_configs
 
 
-
-def call_ollama(prompt: str, model: str, system_prompt: str, logger) -> str:
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "system": system_prompt,
-        "stream": False
-    }
-    try:
-        response = requests.post(OLLAMA_API_URL + "/api/generate", json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("response", "No response received from Ollama.")
-    except Exception as e:
-        logger.error(f"Error calling Ollama: {e}")
-        return f"Error calling Ollama: {e}"
-
-def create_message_handler(bot_config, logger):
+def create_message_handler(bot_config, models_dict, logger):
     async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.message
         if message is None or message.text is None:
@@ -72,25 +36,20 @@ def create_message_handler(bot_config, logger):
             return
 
         await message.chat.send_action(action="typing")
-        reply = call_ollama(
-            prompt,
-            bot_config.get('model', 'llama3'),
-            bot_config.get('system_prompt', 'You are a helpful assistant.'),
-            logger
-        )
+        reply = call_ai_model(prompt, bot_config, models_dict, logger)
         await message.reply_text(reply)
 
     return message_handler
 
-def run_bot(bot_config):
+
+def run_bot(bot_config, models_dict):
     token = bot_config.get('token', '')
     bot_name = bot_config.get('name', 'unnamed')
 
-    # Set up bot-specific logging
     logging.basicConfig(
         format=f'%(asctime)s - {bot_name} - %(levelname)s - %(message)s',
         level=logging.INFO,
-        force=True  # This forces reconfiguration in each process
+        force=True
     )
     logger = logging.getLogger(bot_name)
 
@@ -100,7 +59,7 @@ def run_bot(bot_config):
 
     try:
         app = ApplicationBuilder().token(token).build()
-        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), create_message_handler(bot_config, logger)))
+        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), create_message_handler(bot_config, models_dict, logger)))
 
         logger.info(f"✅ {bot_name} is running...")
         app.run_polling()
@@ -108,21 +67,21 @@ def run_bot(bot_config):
     except Exception as e:
         logger.error(f"Error running bot {bot_name}: {e}")
 
+
 def main():
-    # Set up main process logging
     logging.basicConfig(
         format='%(asctime)s - MAIN - %(levelname)s - %(message)s',
         level=logging.INFO
     )
     main_logger = logging.getLogger('MAIN')
 
-    bot_configs = load_bot_configs()
+    bot_configs, models_dict = load_bot_configs()
 
     main_logger.info(f"Starting {len(bot_configs)} bot(s) in separate processes...")
 
     processes = []
     for config in bot_configs:
-        process = multiprocessing.Process(target=run_bot, args=(config,))
+        process = multiprocessing.Process(target=run_bot, args=(config, models_dict))
         process.start()
         processes.append(process)
 
@@ -134,6 +93,7 @@ def main():
         for process in processes:
             process.terminate()
             process.join()
+
 
 if __name__ == '__main__':
     main()
