@@ -6,22 +6,22 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-TELEGRAM_BOT_JSON = os.getenv('TELEGRAM_BOT_JSON', '')
+CONFIG_JSON = os.getenv('CONFIG_JSON', '')
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', '')
 
-if not TELEGRAM_BOT_JSON or not OLLAMA_API_URL:
-    sys.exit("❌ TELEGRAM_BOT_JSON and OLLAMA_API_URL environment variables must be set.")
+if not CONFIG_JSON or not OLLAMA_API_URL:
+    sys.exit("❌ CONFIG_JSON and OLLAMA_API_URL environment variables must be set.")
 
 def load_bot_config():
     try:
-        with open(TELEGRAM_BOT_JSON, 'r') as f:
+        with open(CONFIG_JSON, 'r') as f:
             config = json.load(f)
         bot_config = config.get('bot', {})
         if not bot_config:
             sys.exit("❌ No 'bot' configuration found in JSON file.")
         return bot_config
     except FileNotFoundError:
-        sys.exit(f"❌ Bot configuration file not found: {TELEGRAM_BOT_JSON}")
+        sys.exit(f"❌ Bot configuration file not found: {CONFIG_JSON}")
     except json.JSONDecodeError as e:
         sys.exit(f"❌ Invalid JSON in bot configuration file: {e}")
     except Exception as e:
