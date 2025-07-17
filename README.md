@@ -145,14 +145,23 @@ The `config.json` file now separates models from bots for better reusability:
 
 ### Environment Variables
 
-For security, API keys can be set via environment variables:
+The following environment variables are **optional** and have default values:
 
 ```env
-# Configuration file path
+# Configuration file path (default: config.json)
 CONFIG_JSON=config.json
 
-# Default Ollama URL (if using local models)
+# Ollama API URL (default: http://localhost:11434)
 OLLAMA_API_URL=http://localhost:11434
+```
+
+API keys can also be set via environment variables for security (model name in uppercase + `_API_KEY`):
+
+```env
+# Example API key environment variables
+OPENAI_GPT4_API_KEY=sk-your-openai-key
+ANTHROPIC_CLAUDE_API_KEY=your-anthropic-key
+CORPORATE_MODEL_API_KEY=your-internal-key
 ```
 
 ## Usage
