@@ -303,4 +303,4 @@ Each bot has its own log prefix:
 
 ## License
 
-This project is open source. See the license file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
