@@ -6,8 +6,8 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
 # === ENVIRONMENT CONFIGURATION ===
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', '')
 
 if not TELEGRAM_BOT_TOKEN or not OLLAMA_API_URL:
     sys.exit("❌ TELEGRAM_BOT_TOKEN and OLLAMA_API_URL environment variables must be set.")
@@ -42,7 +42,11 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     message_text = message.text.strip()
-    bot_username = (await context.bot.get_me()).username.lower()
+    bot_info = await context.bot.get_me()
+    if not bot_info.username:
+        logging.error("Bot username is empty or None")
+        return
+    bot_username = bot_info.username.lower()
 
     # Group chat: only respond if mentioned
     if message.chat.type in ("group", "supergroup"):
