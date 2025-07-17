@@ -1,6 +1,8 @@
-.venv/
-.idea
 .env*
-config.json
+.idea
+.venv/
 .vscode/*
 !.vscode/launch.json
+__pycache__/
+config.json
+prompts.txt
