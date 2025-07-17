@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from telegram.constants import ParseMode
 from api_clients import call_ai_model
 from config import load_bot_configs
 
@@ -37,7 +38,12 @@ def create_message_handler(bot_config, models_dict, logger):
 
         await message.chat.send_action(action="typing")
         reply = call_ai_model(prompt, bot_config, models_dict, logger)
-        await message.reply_text(reply)
+
+        try:
+            await message.reply_text(reply, parse_mode=ParseMode.MARKDOWN)
+        except Exception as e:
+            logger.warning(f"Failed to send markdown message, falling back to plain text: {e}")
+            await message.reply_text(reply)
 
     return message_handler
 
