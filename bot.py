@@ -6,11 +6,11 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-CONFIG_JSON = os.getenv('CONFIG_JSON', '')
+CONFIG_JSON = os.getenv('CONFIG_JSON', 'config.json')
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', '')
 
-if not CONFIG_JSON or not OLLAMA_API_URL:
-    sys.exit("❌ CONFIG_JSON and OLLAMA_API_URL environment variables must be set.")
+if not OLLAMA_API_URL:
+    sys.exit("❌ OLLAMA_API_URL environment variable must be set.")
 
 def load_bot_config():
     try:
