@@ -1,18 +1,39 @@
 import os
 import sys
+import json
 import logging
 import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_BOT_JSON = os.getenv('TELEGRAM_BOT_JSON', '')
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', '')
 
-if not TELEGRAM_BOT_TOKEN or not OLLAMA_API_URL:
-    sys.exit("❌ TELEGRAM_BOT_TOKEN and OLLAMA_API_URL environment variables must be set.")
+if not TELEGRAM_BOT_JSON or not OLLAMA_API_URL:
+    sys.exit("❌ TELEGRAM_BOT_JSON and OLLAMA_API_URL environment variables must be set.")
 
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3')
-SYSTEM_PROMPT = os.getenv('SYSTEM_PROMPT', 'You are a helpful assistant.')
+def load_bot_config():
+    try:
+        with open(TELEGRAM_BOT_JSON, 'r') as f:
+            config = json.load(f)
+        bot_config = config.get('bot', {})
+        if not bot_config:
+            sys.exit("❌ No 'bot' configuration found in JSON file.")
+        return bot_config
+    except FileNotFoundError:
+        sys.exit(f"❌ Bot configuration file not found: {TELEGRAM_BOT_JSON}")
+    except json.JSONDecodeError as e:
+        sys.exit(f"❌ Invalid JSON in bot configuration file: {e}")
+    except Exception as e:
+        sys.exit(f"❌ Error loading bot configuration: {e}")
+
+bot_config = load_bot_config()
+TELEGRAM_BOT_TOKEN = bot_config.get('token', '')
+OLLAMA_MODEL = bot_config.get('model', 'llama3')
+SYSTEM_PROMPT = bot_config.get('system_prompt', 'You are a helpful assistant.')
+
+if not TELEGRAM_BOT_TOKEN:
+    sys.exit("❌ Bot token not found in configuration file.")
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
