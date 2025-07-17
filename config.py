@@ -4,6 +4,7 @@ import json
 
 CONFIG_JSON = os.getenv('CONFIG_JSON', 'config.json')
 
+
 def load_bot_configs():
     """Load bot and model configurations from JSON file"""
     try:

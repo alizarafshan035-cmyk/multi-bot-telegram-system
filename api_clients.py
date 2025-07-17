@@ -50,7 +50,7 @@ def call_openai_compatible(prompt: str, model_config: dict, system_prompt: str, 
     }
 
     try:
-        response = requests.post(f"{base_url}/v1/chat/completions", json=payload, headers=headers)
+        response = requests.post(f"{base_url}/chat/completions", json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
