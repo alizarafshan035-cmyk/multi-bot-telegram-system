@@ -16,7 +16,8 @@ def call_ollama(prompt: str, model_config: dict, system_prompt: str, logger) -> 
         "stream": False
     }
     try:
-        response = requests.post(f"{base_url}/api/generate", json=payload)
+        verify_ssl = model_config.get('ssl_verify', True)
+        response = requests.post(f"{base_url}/api/generate", json=payload, verify=verify_ssl)
         response.raise_for_status()
         data = response.json()
         return data.get("response", "No response received from Ollama.")
@@ -50,7 +51,8 @@ def call_openai_compatible(prompt: str, model_config: dict, system_prompt: str, 
     }
 
     try:
-        response = requests.post(f"{base_url}/chat/completions", json=payload, headers=headers)
+        verify_ssl = model_config.get('ssl_verify', True)
+        response = requests.post(f"{base_url}/chat/completions", json=payload, headers=headers, verify=verify_ssl)
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
