@@ -7,10 +7,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
 CONFIG_JSON = os.getenv('CONFIG_JSON', 'config.json')
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', '')
-
-if not OLLAMA_API_URL:
-    sys.exit("❌ OLLAMA_API_URL environment variable must be set.")
+OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
 
 def load_bot_config():
     try:

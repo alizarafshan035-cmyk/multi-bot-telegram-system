@@ -3,12 +3,11 @@
     "configurations": [
         {
             "name": "Run Telegram Bot",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/bot.py",
             "console": "integratedTerminal",
-            "python": "${workspaceFolder}/.venv/bin/python",
-            "envFile": "${workspaceFolder}/.env"
+            "python": "${workspaceFolder}/.venv/bin/python"
         }
     ]
 } 
